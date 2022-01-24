@@ -54,4 +54,42 @@ contract('DappToken', (accounts) => {
         balance = await tokenInstance.balanceOf(accounts[ 0 ]);
         assert.equal(balance.toNumber(), 750000, "Balance should be deducted from account");
     })
+
+    it("approves token for delegate transfer", async () => {
+        let tokenInstance = await DappToken.deployed();
+
+        let approveCall = await tokenInstance.approve.call(accounts[1], 1000);
+        // console.log("approveCall", approveCall)
+        assert.equal(approveCall, true, "it completes the function")
+
+        let approveFun = await tokenInstance.approve(accounts[1],1000, {from: accounts[0]});
+
+        assert.equal(approveFun.logs.length, 1, "triggers one event");
+        assert.equal(approveFun.logs[ 0 ].event, "Approval", "Event name should be 'Approval' ");
+        assert.equal(approveFun.logs[ 0 ].args._owner, accounts[ 0 ], "logs the account the token are transfered from");
+        assert.equal(approveFun.logs[ 0 ].args._spender, accounts[ 1 ], "logs the account the token are transfered to");
+        assert.equal(approveFun.logs[ 0 ].args._value, 1000, "logs the transfered amount");
+
+        let allowance = await tokenInstance.allowance(accounts[0], accounts[1]);
+        assert.equal(allowance.toNumber(), 1000, "Stores the allowance for delegated transfer")
+    })
+
+    it("handles delegate transfer", async () => {
+        let tokenInstance = await DappToken.deployed();
+        tokenInstance.transferFrom.call(accounts[ 0 ], accounts[ 2 ], 10000, { from: accounts[ 1 ] }).then(assert.fail).catch((err) => {
+            assert(err.message.indexOf('revert') >= 0, "cannot transfer larger than approve amount");
+        });
+
+        let transferFromCall = await tokenInstance.transferFrom.call(accounts[ 0 ], accounts[2], 1000, {from: accounts[1]});
+        assert.equal(transferFromCall, true, "it completes the function");
+
+        let transferFromFun = await tokenInstance.transferFrom(accounts[ 0 ], accounts[ 2 ], 1000, { from: accounts[ 1 ] });
+
+        assert.equal(transferFromFun.logs.length, 1, "triggers one event");
+        assert.equal(transferFromFun.logs[ 0 ].event, "Transfer", "Event name should be 'Transfer' ");
+        // console.log("transferFromFun.logs[ 0 ].args", transferFromFun.logs[ 0 ].args)
+        assert.equal(transferFromFun.logs[ 0 ].args._from, accounts[ 0 ], "logs the account the token are transfered from");
+        assert.equal(transferFromFun.logs[ 0 ].args._to, accounts[ 2 ], "logs the account the token are transfered to");
+        assert.equal(transferFromFun.logs[ 0 ].args._value, 1000, "logs the transfered amount");
+    })
 })
