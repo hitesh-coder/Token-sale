@@ -91,5 +91,11 @@ contract('DappToken', (accounts) => {
         assert.equal(transferFromFun.logs[ 0 ].args._from, accounts[ 0 ], "logs the account the token are transfered from");
         assert.equal(transferFromFun.logs[ 0 ].args._to, accounts[ 2 ], "logs the account the token are transfered to");
         assert.equal(transferFromFun.logs[ 0 ].args._value, 1000, "logs the transfered amount");
+
+        assert.equal(await tokenInstance.allowance(accounts[0],accounts[1]), 0, "subtracted the allowance")
+
+        // console.log(balanceOf(accounts[2]))
+        assert.equal(await tokenInstance.balanceOf(accounts[2]), 1000, "balance 1000 should be added to account")
+        assert.equal(await tokenInstance.balanceOf(accounts[ 0 ]), 749000, "balance 1000 should be remove from senders account")
     })
 })
